@@ -1,0 +1,32 @@
+- CSV
+
+45D1EE,E5E9F4,D20000,2A20FE,FF19FE
+
+- With #
+
+#45D1EE, #E5E9F4, #D20000, #2A20FE, #FF19FE
+
+- Array
+
+["45D1EE","E5E9F4","D20000","2A20FE","FF19FE"]
+
+- Object
+
+{"Sky Aqua":"45D1EE","Ghost White":"E5E9F4","Brick Ember":"D20000","Blue":"2A20FE","Magenta":"FF19FE"}
+
+- Extended Array
+
+[{"name":"Sky Aqua","hex":"45D1EE","rgb":[69,209,238],"cmyk":[71,12,0,7],"hsb":[190,71,93],"hsl":[190,83,60],"lab":[78,-28,-25]},{"name":"Ghost White","hex":"E5E9F4","rgb":[229,233,244],"cmyk":[6,5,0,4],"hsb":[224,6,96],"hsl":[224,41,93],"lab":[92,1,-6]},{"name":"Brick Ember","hex":"D20000","rgb":[210,0,0],"cmyk":[0,100,100,18],"hsb":[0,100,82],"hsl":[0,100,41],"lab":[44,69,58]},{"name":"Blue","hex":"2A20FE","rgb":[42,32,254],"cmyk":[83,87,0,0],"hsb":[243,87,100],"hsl":[243,99,56],"lab":[35,73,-102]},{"name":"Magenta","hex":"FF19FE","rgb":[255,25,254],"cmyk":[0,90,0,0],"hsb":[300,90,100],"hsl":[300,100,55],"lab":[61,96,-59]}]
+
+- XML
+
+<palette>
+  <color name="Sky Aqua" hex="45D1EE" r="69" g="209" b="238" />
+  <color name="Ghost White" hex="E5E9F4" r="229" g="233" b="244" />
+  <color name="Brick Ember" hex="D20000" r="210" g="0" b="0" />
+  <color name="Blue" hex="2A20FE" r="42" g="32" b="254" />
+  <color name="Magenta" hex="FF19FE" r="255" g="25" b="254" />
+</palette>
+
+
+python f:/Work/TMT-WebApp/app.py

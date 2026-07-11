@@ -1,0 +1,734 @@
+{% extends 'base.html' %}
+
+{% block title %}Job{% endblock %}
+{% block nav_job %}active{% endblock %}
+
+{% block main_content %}
+
+{% if role == 'HR' %}
+    <div class="job">
+        <div class="job-header">
+            <h2>Employee Management</h2>
+            <div style="display:flex; gap:8px;">
+                <!-- company filter -->
+                <form method="GET" action="{{ url_for('jobtable') }}" style="display:flex; gap:6px; align-items:center;">
+                    <select name="company_fk" onchange="this.form.submit()" style="padding:5px 8px; border-radius:5px; border:1px solid var(--clr-light); background:var(--clr-white); color:var(--clr-dark); font-family:'Poppins',sans-serif; font-size:0.85rem;">
+                        <option value="">All Companies</option>
+                        {% for co in company_list %}
+                        <option value="{{ co.id }}" {% if company_filter|string == co.id|string %}selected{% endif %}>
+                            {{ co.code }} — {{ co.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </form>
+                <button class="import-btn" onclick="document.getElementById('uploadPop').classList.add('open')">
+                    <span class="material-symbols-outlined">upload_file</span>
+                    Import Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- confirmation popup -->
+        <div class="pop" id="uploadPop">
+            <div class="popup">
+                <h2>⚠️ Replace All Records?</h2>
+                <p>This will delete all current employee records and replace them with the uploaded file. This cannot be undone.</p>
+                <p style="margin-top:8px; font-size:0.82rem; color:#888;">
+                    Excel column order: <b>id | company_id | name | age | city | email | number | role | date_hired | bank_acc | company_code | emp_type </b>
+                </p>
+                <form method="POST" action="{{ url_for('upload_employees') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="file" name="excel_file" accept=".xlsx" required>
+                    <div style="margin-top:10px; display:flex; gap:10px; justify-content:center;">
+                        <button type="submit">Yes, Replace</button>
+                        <button type="button" onclick="document.getElementById('uploadPop').classList.remove('open')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="jobbox">
+            {% if employee_to_edit %}
+                <h3>Edit Employee</h3>
+                <form method="POST" action="{{ url_for('editj', id=employee_to_edit.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="name" value="{{ employee_to_edit.name }}" placeholder="Name" required>
+                    <input type="text" name="company_id" value="{{ employee_to_edit.company_id }}" placeholder="Company ID (e.g. TMT-067)" required>
+                    <input type="number" name="age" value="{{ employee_to_edit.age }}" placeholder="Age" required>
+                    <input type="text" name="city" value="{{ employee_to_edit.city }}" placeholder="City" required>
+                    <input type="email" name="email" value="{{ employee_to_edit.email }}" placeholder="Email" required>
+                    <input type="text" name="number" value="{{ employee_to_edit.number }}" placeholder="Number" required>
+                    <input type="text" name="role" value="{{ employee_to_edit.role }}" placeholder="Role" required>
+                    <input type="date" name="date_hired" class="hire-date" value="{{ employee_to_edit.date_hired }}" required>
+                    <input type="text" name="bank_acc" value="{{ employee_to_edit.bank_acc or '' }}" placeholder="Bank Account No.">
+                    <select name="emp_type">
+                        <option value="">-- Employment Type --</option>
+                        <option value="FW"      {% if employee_to_edit.emp_type == 'FW'      %}selected{% endif %}>Foreign Worker</option>
+                        <option value="WP"      {% if employee_to_edit.emp_type == 'WP'      %}selected{% endif %}>Work Permit</option>
+                        <option value="SPASS"   {% if employee_to_edit.emp_type == 'SPASS'   %}selected{% endif %}>S-Pass</option>
+                        <option value="PR"      {% if employee_to_edit.emp_type == 'PR'      %}selected{% endif %}>Permanent Resident</option>
+                        <option value="Citizen" {% if employee_to_edit.emp_type == 'Citizen' %}selected{% endif %}>Citizen</option>
+                    </select>
+                    <select name="company_fk">
+                        <option value="">-- Select Company --</option>
+                        {% for co in company_list %}
+                        <option value="{{ co.id }}" {% if employee_to_edit.company_fk == co.id %}selected{% endif %}>
+                            {{ co.code }} — {{ co.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">Update</button>
+                    <a href="{{ url_for('jobtable') }}">Cancel</a>
+                </form>
+            {% else %}
+                <h3>Add Employee</h3>
+                <form method="POST" action="{{ url_for('addj') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="name" placeholder="Name" required>
+                    <input type="text" name="company_id" placeholder="Company ID (e.g. TMT-067)" required>
+                    <input type="number" name="age" placeholder="Age" required>
+                    <input type="text" name="city" placeholder="City" required>
+                    <input type="email" name="email" placeholder="Email" required>
+                    <input type="text" name="number" placeholder="Number" required>
+                    <input type="text" name="role" placeholder="Role" required>
+                    <input type="date" name="date_hired" class="hire-date" required>
+                    <input type="text" name="bank_acc" placeholder="Bank Account No.">
+                    <select name="emp_type">
+                        <option value="">-- Employment Type --</option>
+                        <option value="FW">Foreign Worker</option>
+                        <option value="WP">Work Permit</option>
+                        <option value="SPASS">S-Pass</option>
+                        <option value="PR">Permanent Resident</option>
+                        <option value="Citizen">Citizen</option>
+                    </select>
+                    <select name="company_fk">
+                        <option value="">-- Select Company --</option>
+                        {% for co in company_list %}
+                        <option value="{{ co.id }}">{{ co.code }} — {{ co.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">Add</button>
+                </form>
+            {% endif %}
+        </div>
+
+        <div class="jobtable">
+            <div class="search-bar">
+                <input type="text" id="employeeSearch" placeholder="🔍 Search..." onkeyup="searchTable()">
+            </div>
+            <table id="employeeTable">
+                <thead>
+                    <tr>
+                        <th>Company ID</th><th>Name</th><th>Age</th><th>City</th>
+                        <th>Email</th><th>Number</th><th>Role</th><th>Date Hired</th>
+                        <th>Bank Acc</th><th>Type</th><th>Company</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td>{{ emp.company_id }}</td>
+                        <td>{{ emp.name }}</td>
+                        <td>{{ emp.age }}</td>
+                        <td>{{ emp.city }}</td>
+                        <td>{{ emp.email }}</td>
+                        <td>{{ emp.number }}</td>
+                        <td>{{ emp.role }}</td>
+                        <td>{{ emp.date_hired }}</td>
+                        <td>{{ emp.bank_acc or '-' }}</td>
+                        <td>
+                            {% if emp.emp_type %}
+                                <span class="emp-badge emp-{{ emp.emp_type|lower }}">{{ emp.emp_type }}</span>
+                            {% else %}
+                                <span style="color:#aaa;">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if emp.company_code %}
+                                <span class="emp-badge emp-citizen">{{ emp.company_code }}</span>
+                            {% else %}
+                                <span style="color:#aaa;">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('jobtable', edit_id=emp.id) }}">Edit</a>
+                            <form action="{{ url_for('deletej', id=emp.id) }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" onclick="return confirm('Are you sure?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    {% elif role == 'Accountant' %}
+    <div class="job">
+        <div class="job-header"><h2>Cash Management</h2></div>
+        <div class="jobbox">
+            {% if cash_to_edit %}
+                <h3>Edit Cash Flow</h3>
+                <form method="POST" action="{{ url_for('editc', id=cash_to_edit.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="date" name="flow_date" class="hire-date" value="{{ cash_to_edit.flow_date }}" required>
+                    <input type="number" step="0.01" name="cash_in" value="{{ cash_to_edit.cash_in }}">
+                    <input type="number" step="0.01" name="cash_out" value="{{ cash_to_edit.cash_out }}">
+                    <input type="text" name="name" value="{{ cash_to_edit.name }}" required>
+                    <button type="submit">Update</button>
+                    <a href="{{ url_for('cashtable') }}">Cancel</a>
+                </form>
+            {% else %}
+                <h3>Add Cash Flow</h3>
+                <form method="POST" action="{{ url_for('addc') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="date" name="flow_date" class="hire-date" required>
+                    <input type="number" step="0.01" name="cash_in" placeholder="Cash In">
+                    <input type="number" step="0.01" name="cash_out" placeholder="Cash Out">
+                    <input type="text" name="name" placeholder="Description" required>
+                    <button type="submit">Add</button>
+                </form>
+            {% endif %}
+        </div>
+        <div class="jobtable">
+            <table>
+                <tr><th>ID</th><th>Date</th><th>Cash In</th><th>Cash Out</th><th>Description</th><th>Actions</th></tr>
+                {% for cash in cash_flows %}
+                <tr>
+                    <td>{{ cash.id }}</td><td>{{ cash.flow_date }}</td>
+                    <td>{{ cash.cash_in }}</td><td>{{ cash.cash_out }}</td><td>{{ cash.name }}</td>
+                    <td>
+                        <a href="{{ url_for('cashtable', edit_id=cash.id) }}">Edit</a>
+                        <form action="{{ url_for('deletec', id=cash.id) }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" onclick="return confirm('Are you sure?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    {% elif role == 'Head' %}
+    <div class="job">
+        <div class="job-header"><h2>User Management</h2></div>
+        <div class="jobbox">
+            {% if user_to_edit %}
+                <h3>Edit User</h3>
+                <form method="POST" action="{{ url_for('edith', id=user_to_edit.id) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="name" value="{{ user_to_edit.name }}" placeholder="Name" required>
+                    <input type="password" name="password" placeholder="New Password" required>
+                    <select name="role" required>
+                        <option value="Head" {% if user_to_edit.role == 'Head' %}selected{% endif %}>Head</option>
+                        <option value="HR" {% if user_to_edit.role == 'HR' %}selected{% endif %}>HR</option>
+                        <option value="Accountant" {% if user_to_edit.role == 'Accountant' %}selected{% endif %}>Accountant</option>
+                        <option value="Admin" {% if user_to_edit.role == 'Admin' %}selected{% endif %}>Admin</option>
+                        <option value="Finance" {% if user_to_edit.role == 'Finance' %}selected{% endif %}>Finance</option>
+                    </select>
+                    <label>Upload New Face Image (optional)</label>
+                    <input type="file" name="face_image" class="face-image" accept="image/*">
+                    <button type="submit">Update</button>
+                    <a href="{{ url_for('headtable') }}">Cancel</a>
+                </form>
+            {% else %}
+                <h3>Add User</h3>
+                <form method="POST" action="{{ url_for('addh') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="name" placeholder="Name" required>
+                    <input type="password" name="password" placeholder="Password" required>
+                    <select name="role" required>
+                        <option value="Head">Head</option>
+                        <option value="HR">HR</option>
+                        <option value="Accountant">Accountant</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Finance">Finance</option>
+                    </select>
+                    <label>Upload Face Image</label>
+                    <input type="file" name="face_image" accept="image/*" required>
+                    <button type="submit">Add</button>
+                </form>
+            {% endif %}
+        </div>
+        <div class="jobtable">
+            <table>
+                <tr><th>ID</th><th>Name</th><th>Role</th><th>Actions</th></tr>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.role }}</td>
+                    <td>
+                        <a href="{{ url_for('headtable', edit_id=user.id) }}">Edit</a>
+                        <form action="{{ url_for('deleteh', id=user.id) }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" onclick="return confirm('Delete this user?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    {% elif role == 'Finance' and page == 'invoices' %}
+    <div class="job">
+        <div class="job-header">
+            <h2>Invoices</h2>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <form method="GET" action="{{ url_for('invoices') }}" style="display:flex; gap:6px; align-items:center;">
+                    <select name="company_filter" onchange="this.form.submit()" style="padding:5px 8px; border-radius:5px; border:1px solid var(--clr-light); background:var(--clr-white); color:var(--clr-dark); font-family:'Poppins',sans-serif; font-size:0.85rem;">
+                        <option value="">All Companies</option>
+                        {% for co in companies %}
+                        <option value="{{ co }}" {% if company_filter == co %}selected{% endif %}>{{ co }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="status_filter" onchange="this.form.submit()" style="padding:5px 8px; border-radius:5px; border:1px solid var(--clr-light); background:var(--clr-white); color:var(--clr-dark); font-family:'Poppins',sans-serif; font-size:0.85rem;">
+                        <option value="">All Status</option>
+                        <option value="unpaid"  {% if status_filter == 'unpaid'  %}selected{% endif %}>Unpaid</option>
+                        <option value="paid"    {% if status_filter == 'paid'    %}selected{% endif %}>Paid</option>
+                        <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Overdue</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <!-- FORM BOX -->
+        <div class="jobbox" style="max-height:none; overflow-y:visible;">
+            {% set editing = inv_to_edit %}
+            {% set pre = prefill or {} %}
+
+            {% if editing %}
+                <h3>Edit Invoice — {{ editing.invoice_no }}</h3>
+                <form method="POST" action="{{ url_for('edit_invoice', id=editing.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% else %}
+                <h3>New Invoice {% if pre %}(from Quotation){% endif %}</h3>
+                <form method="POST" action="{{ url_for('add_invoice') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="quotation_id" value="{{ pre.get('quotation_id', '') }}">
+            {% endif %}
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <!-- Left -->
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Company</label>
+                    <select name="company_code" required>
+                        {% for co in companies %}
+                        <option value="{{ co }}"
+                            {% if editing and editing.company_code == co %}selected
+                            {% elif pre.get('company_code') == co %}selected{% endif %}>{{ co }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Invoice No.</label>
+                    <input type="text" name="invoice_no" placeholder="e.g. 01009/TQS/TY/26"
+                        value="{{ editing.invoice_no if editing else '' }}" required>
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Date</label>
+                    <input type="date" name="invoice_date" class="hire-date"
+                        value="{{ editing.invoice_date if editing else '' }}" required>
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Currency</label>
+                    <select name="currency">
+                        <option value="SGD" {% if not editing or editing.currency == 'SGD' %}selected{% endif %}>SGD</option>
+                        <option value="USD" {% if editing and editing.currency == 'USD' %}selected{% endif %}>USD</option>
+                    </select>
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Status</label>
+                    <select name="status">
+                        {% for s in ['unpaid','paid','overdue'] %}
+                        <option value="{{ s }}" {% if editing and editing.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Right: client -->
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Client Name</label>
+                    <input type="text" name="client_name" placeholder="Client company name"
+                        value="{{ editing.client_name if editing else pre.get('client_name','') }}">
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Client Address</label>
+                    <input type="text" name="client_address" placeholder="Address"
+                        value="{{ editing.client_address if editing else pre.get('client_address','') }}">
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Attn</label>
+                    <input type="text" name="client_attn" placeholder="Finance Dept. / Mr ..."
+                        value="{{ editing.client_attn if editing else pre.get('client_attn','') }}">
+                </div>
+            </div>
+
+            <!-- Work order details -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Work Order</label>
+                    <input type="text" name="work_order" placeholder="e.g. 2024 / S303016461 / 05 / Z2SC"
+                        value="{{ editing.work_order if editing else '' }}">
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Vessel</label>
+                    <input type="text" name="vessel" placeholder="e.g. S303-J6N010 PETROLEO..."
+                        value="{{ editing.vessel if editing else '' }}">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Item No.</label>
+                    <input type="text" name="item_no" placeholder="e.g. LINE # 140"
+                        value="{{ editing.item_no if editing else '' }}">
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Yard</label>
+                    <input type="text" name="yard" placeholder="e.g. TBY"
+                        value="{{ editing.yard if editing else '' }}">
+                </div>
+            </div>
+
+            <!-- Line items -->
+            <div style="margin-top:12px;">
+                <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Line Items</label>
+                <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+                    <thead>
+                        <tr>
+                            <th style="padding:6px; background:#1F3864; color:#fff; font-size:0.8rem;">Description</th>
+                            <th style="padding:6px; background:#1F3864; color:#fff; font-size:0.8rem; width:100px;">QTY</th>
+                            <th style="padding:6px; background:#1F3864; color:#fff; font-size:0.8rem; width:100px;">Rate ($)</th>
+                            <th style="padding:6px; background:#1F3864; color:#fff; font-size:0.8rem; width:100px;">Amount</th>
+                            <th style="padding:6px; background:#1F3864; color:#fff; font-size:0.8rem; width:60px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="invLineItemsBody">
+                        {% set items = editing.line_items if editing else pre.get('line_items', []) %}
+                        {% if items %}
+                            {% for item in items %}
+                            <tr>
+                                <td><input type="text" name="li_desc[]" value="{{ item.description }}" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                                <td><input type="number" step="0.01" name="li_qty[]" value="{{ item.qty }}" oninput="updateAmount(this)" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                                <td><input type="number" step="0.01" name="li_rate[]" value="{{ item.rate }}" oninput="updateAmount(this)" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                                <td class="amt-cell" style="padding:4px; font-size:0.82rem; color:var(--clr-dark); text-align:right;">
+                                    ${{ "%.2f"|format(item.qty|float * item.rate|float) }}
+                                </td>
+                                <td><button type="button" onclick="this.closest('tr').remove(); updateTotals()" style="background:#8B0000; color:#fff; border:none; border-radius:3px; padding:3px 8px; cursor:pointer;">✕</button></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td><input type="text" name="li_desc[]" placeholder="Description" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                            <td><input type="number" step="0.01" name="li_qty[]" placeholder="0" oninput="updateAmount(this)" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                            <td><input type="number" step="0.01" name="li_rate[]" placeholder="0.00" oninput="updateAmount(this)" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                            <td class="amt-cell" style="padding:4px; font-size:0.82rem; text-align:right;">$0.00</td>
+                            <td><button type="button" onclick="this.closest('tr').remove(); updateTotals()" style="background:#8B0000; color:#fff; border:none; border-radius:3px; padding:3px 8px; cursor:pointer;">✕</button></td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+                    <button type="button" onclick="addInvLineItem()" class="import-btn">+ Add Row</button>
+                    <div style="font-size:0.85rem; color:var(--clr-dark); text-align:right;">
+                        Subtotal: <b id="subtotalDisp">$0.00</b> &nbsp;|&nbsp;
+                        GST 9%: <b id="gstDisp">$0.00</b> &nbsp;|&nbsp;
+                        <span style="font-size:1rem;">Total Claim: <b id="totalDisp">$0.00</b></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Closing note -->
+            <div style="margin-top:10px;">
+                <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Closing Note</label>
+                <input type="text" name="closing_note"
+                    placeholder="In view of above, we hereby submit our first progressive invoice..."
+                    value="{{ editing.closing_note if editing else '' }}">
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:14px;">
+                <button type="submit">{{ 'Update' if editing else 'Save Invoice' }}</button>
+                {% if editing %}<a href="{{ url_for('invoices') }}">Cancel</a>{% endif %}
+            </div>
+            </form>
+        </div>
+
+        <!-- TABLE -->
+        <div class="jobtable">
+            <div class="search-bar">
+                <input type="text" id="invSearch" placeholder="🔍 Search..." onkeyup="searchInvoices()">
+            </div>
+            <table id="invTable">
+                <thead>
+                    <tr>
+                        <th>Invoice No.</th><th>Company</th><th>Client</th><th>Date</th>
+                        <th>Total Claim</th><th>Status</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in inv_list %}
+                    <tr>
+                        <td><b>{{ inv.invoice_no }}</b></td>
+                        <td><span class="emp-badge emp-citizen">{{ inv.company_code }}</span></td>
+                        <td>{{ inv.client_name }}</td>
+                        <td>{{ inv.invoice_date }}</td>
+                        <td><b>${{ "%.2f"|format(inv.total_claim or 0) }}</b></td>
+                        <td>
+                            {% set sc = {'unpaid':'emp-fw','paid':'emp-pr','overdue':'emp-na'} %}
+                            <span class="emp-badge {{ sc.get(inv.status,'emp-na') }}">{{ inv.status|capitalize }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('invoices', edit_id=inv.id) }}">Edit</a>
+                            <a href="{{ url_for('download_invoice', id=inv.id) }}">PDF</a>
+                            <!-- quick status update -->
+                            <form action="{{ url_for('update_invoice_status', id=inv.id) }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <select name="status" onchange="this.form.submit()" style="font-size:0.75rem; padding:2px 4px; border-radius:4px; background:var(--clr-white); color:var(--clr-dark); border:1px solid var(--clr-light);">
+                                    <option value="unpaid"  {% if inv.status == 'unpaid'  %}selected{% endif %}>Unpaid</option>
+                                    <option value="paid"    {% if inv.status == 'paid'    %}selected{% endif %}>Paid</option>
+                                    <option value="overdue" {% if inv.status == 'overdue' %}selected{% endif %}>Overdue</option>
+                                </select>
+                            </form>
+                            <form action="{{ url_for('delete_invoice', id=inv.id) }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" onclick="return confirm('Delete this invoice?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not inv_list %}
+                    <tr><td colspan="7" style="text-align:center; color:#aaa; padding:20px;">No invoices yet</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% elif role == 'Finance' and page == 'quotations' %}
+    <div class="job">
+        <div class="job-header">
+            <h2>Quotations</h2>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <form method="GET" action="{{ url_for('quotations') }}" style="display:flex; gap:6px; align-items:center;">
+                    <select name="company_filter" onchange="this.form.submit()" style="padding:5px 8px; border-radius:5px; border:1px solid var(--clr-light); background:var(--clr-white); color:var(--clr-dark); font-family:'Poppins',sans-serif; font-size:0.85rem;">
+                        <option value="">All Companies</option>
+                        {% for co in companies %}
+                        <option value="{{ co }}" {% if company_filter == co %}selected{% endif %}>{{ co }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="status_filter" onchange="this.form.submit()" style="padding:5px 8px; border-radius:5px; border:1px solid var(--clr-light); background:var(--clr-white); color:var(--clr-dark); font-family:'Poppins',sans-serif; font-size:0.85rem;">
+                        <option value="">All Status</option>
+                        <option value="draft"    {% if status_filter == 'draft'    %}selected{% endif %}>Draft</option>
+                        <option value="sent"     {% if status_filter == 'sent'     %}selected{% endif %}>Sent</option>
+                        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <!-- FORM BOX -->
+        <div class="jobbox" style="max-height:none; overflow-y:visible;">
+            {% if quote_to_edit %}
+                <h3>Edit Quotation — {{ quote_to_edit.ref_no }}</h3>
+                <form method="POST" action="{{ url_for('edit_quotation', id=quote_to_edit.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% else %}
+                <h3>New Quotation</h3>
+                <form method="POST" action="{{ url_for('add_quotation') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% endif %}
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <!-- Left column -->
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Company</label>
+                    <select name="company_code" required>
+                        {% for co in companies %}
+                        <option value="{{ co }}" {% if (quote_to_edit and quote_to_edit.company_code == co) %}selected{% endif %}>{{ co }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Quote Type</label>
+                    <select name="quote_type" id="quoteType" onchange="toggleQuoteType()">
+                        <option value="manpower"  {% if not quote_to_edit or quote_to_edit.quote_type == 'manpower'  %}selected{% endif %}>Manpower / Hourly Rate</option>
+                        <option value="lineitems" {% if quote_to_edit and quote_to_edit.quote_type == 'lineitems' %}selected{% endif %}>Line Items</option>
+                    </select>
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Reference No.</label>
+                    <input type="text" name="ref_no" placeholder="e.g. 00614-TQB-QOS-2025"
+                        value="{{ quote_to_edit.ref_no if quote_to_edit else '' }}" required>
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Date</label>
+                    <input type="date" name="quote_date" class="hire-date"
+                        value="{{ quote_to_edit.quote_date if quote_to_edit else '' }}" required>
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Status</label>
+                    <select name="status">
+                        {% for s in ['draft','sent','approved','rejected'] %}
+                        <option value="{{ s }}" {% if quote_to_edit and quote_to_edit.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Right column: client details -->
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Client Name</label>
+                    <input type="text" name="client_name" placeholder="e.g. Ezra & Macquarie"
+                        value="{{ quote_to_edit.client_name if quote_to_edit else '' }}">
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Client Address</label>
+                    <input type="text" name="client_address" placeholder="Address"
+                        value="{{ quote_to_edit.client_address if quote_to_edit else '' }}">
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Attn</label>
+                    <input type="text" name="client_attn" placeholder="Mr / Ms ..."
+                        value="{{ quote_to_edit.client_attn if quote_to_edit else '' }}">
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Client Email</label>
+                    <input type="email" name="client_email" placeholder="client@email.com"
+                        value="{{ quote_to_edit.client_email if quote_to_edit else '' }}">
+
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Client Tel / Fax</label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                        <input type="text" name="client_tel" placeholder="Tel"
+                            value="{{ quote_to_edit.client_tel if quote_to_edit else '' }}">
+                        <input type="text" name="client_fax" placeholder="Fax"
+                            value="{{ quote_to_edit.client_fax if quote_to_edit else '' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject + Intro -->
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+                <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Subject / Ref Line</label>
+                <input type="text" name="subject" placeholder="Quotation & Contract Agreement for..."
+                    value="{{ quote_to_edit.subject if quote_to_edit else '' }}">
+
+                <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Intro paragraph</label>
+                <input type="text" name="intro" placeholder="We would like to thank you for..."
+                    value="{{ quote_to_edit.intro if quote_to_edit else '' }}">
+            </div>
+
+            <!-- MANPOWER SECTION -->
+            <div id="manpowerSection" style="margin-top:10px;">
+                <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Rate Per Man Hour (SGD)</label>
+                <input type="number" step="0.01" name="rate_per_hour" placeholder="e.g. 12.00"
+                    value="{{ quote_to_edit.rate_per_hour if quote_to_edit else '' }}">
+            </div>
+
+            <!-- LINE ITEMS SECTION -->
+            <div id="lineitemsSection" style="margin-top:10px; display:none;">
+                <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Line Items</label>
+                <table style="width:100%; border-collapse:collapse; margin-top:6px;" id="lineItemsTable">
+                    <thead>
+                        <tr>
+                            <th style="padding:6px; background:#1F3864; color:#fff; font-size:0.8rem;">Description</th>
+                            <th style="padding:6px; background:#1F3864; color:#fff; font-size:0.8rem; width:100px;">QTY</th>
+                            <th style="padding:6px; background:#1F3864; color:#fff; font-size:0.8rem; width:100px;">Rate ($)</th>
+                            <th style="padding:6px; background:#1F3864; color:#fff; font-size:0.8rem; width:80px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="lineItemsBody">
+                        {% if quote_to_edit and quote_to_edit.line_items %}
+                            {% for item in quote_to_edit.line_items %}
+                            <tr>
+                                <td><input type="text" name="li_desc[]" value="{{ item.description }}" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                                <td><input type="number" step="0.01" name="li_qty[]" value="{{ item.qty }}" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                                <td><input type="number" step="0.01" name="li_rate[]" value="{{ item.rate }}" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                                <td><button type="button" onclick="this.closest('tr').remove()" style="background:#8B0000; color:#fff; border:none; border-radius:3px; padding:3px 8px; cursor:pointer;">✕</button></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td><input type="text" name="li_desc[]" placeholder="Description" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                            <td><input type="number" step="0.01" name="li_qty[]" placeholder="0" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                            <td><input type="number" step="0.01" name="li_rate[]" placeholder="0.00" style="width:100%; background:#630000; color:#d1ffd1; border:none; padding:4px; border-radius:3px;"></td>
+                            <td><button type="button" onclick="this.closest('tr').remove()" style="background:#8B0000; color:#fff; border:none; border-radius:3px; padding:3px 8px; cursor:pointer;">✕</button></td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                <button type="button" onclick="addLineItem()" class="import-btn" style="margin-top:6px;">+ Add Row</button>
+            </div>
+
+            <!-- Notes + Terms -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Notes (one per line)</label>
+                    <textarea name="notes" rows="4" placeholder="Timesheet signed by supervisor&#10;Safe working environment..." style="background:#630000; color:#d1ffd1; border:none; border-radius:5px; padding:6px; font-family:'Poppins',sans-serif; font-size:0.82rem;">{{ quote_to_edit.notes if quote_to_edit else '' }}</textarea>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Terms &amp; Conditions (leave blank for default)</label>
+                    <textarea name="terms" rows="4" placeholder="Leave blank to use standard T&C..." style="background:#630000; color:#d1ffd1; border:none; border-radius:5px; padding:6px; font-family:'Poppins',sans-serif; font-size:0.82rem;">{{ quote_to_edit.terms if quote_to_edit else '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Approval block -->
+            <div style="margin-top:10px;">
+                <label style="color:var(--clr-dark); font-size:0.8rem; font-weight:600;">Client Approver Name</label>
+                <input type="text" name="client_approver_name" placeholder="Mr Joseph Thomas"
+                    value="{{ quote_to_edit.client_approver_name if quote_to_edit else '' }}">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px;">
+                    <input type="text" name="client_approver_designation" placeholder="Designation"
+                        value="{{ quote_to_edit.client_approver_designation if quote_to_edit else '' }}">
+                    <input type="text" name="client_approver_hp" placeholder="HP No."
+                        value="{{ quote_to_edit.client_approver_hp if quote_to_edit else '' }}">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:14px;">
+                <button type="submit">{{ 'Update' if quote_to_edit else 'Save Quotation' }}</button>
+                {% if quote_to_edit %}<a href="{{ url_for('quotations') }}">Cancel</a>{% endif %}
+            </div>
+            </form>
+        </div>
+
+        <!-- TABLE -->
+        <div class="jobtable">
+            <div class="search-bar">
+                <input type="text" id="quoteSearch" placeholder="🔍 Search..." onkeyup="searchQuotes()">
+            </div>
+            <table id="quoteTable">
+                <thead>
+                    <tr>
+                        <th>Ref No.</th><th>Company</th><th>Client</th><th>Date</th>
+                        <th>Type</th><th>Status</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in quote_list %}
+                    <tr>
+                        <td><b>{{ q.ref_no }}</b></td>
+                        <td><span class="emp-badge emp-citizen">{{ q.company_code }}</span></td>
+                        <td>{{ q.client_name }}</td>
+                        <td>{{ q.quote_date }}</td>
+                        <td>
+                            {% if q.quote_type == 'manpower' %}
+                                <span class="emp-badge emp-pr">Manpower</span>
+                            {% else %}
+                                <span class="emp-badge emp-spass">Line Items</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set sc = {'draft':'emp-na','sent':'emp-spass','approved':'emp-pr','rejected':'emp-fw'} %}
+                            <span class="emp-badge {{ sc.get(q.status, 'emp-na') }}">{{ q.status|capitalize }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('quotations', edit_id=q.id) }}">Edit</a>
+                            <a href="{{ url_for('download_quotation', id=q.id) }}">PDF</a>
+                            {% if q.status == 'approved' %}
+                            <a href="{{ url_for('quotation_to_invoice', id=q.id) }}" style="color:#2d6a2d;">→ Invoice</a>
+                            {% endif %}
+                            <form action="{{ url_for('delete_quotation', id=q.id) }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" onclick="return confirm('Delete this quotation?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not quote_list %}
+                    <tr><td colspan="7" style="text-align:center; color:#aaa; padding:20px;">No quotations yet</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% endif %}
+
+{% endblock %}

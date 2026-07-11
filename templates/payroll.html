@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+
+{% block title %}Payroll{% endblock %}
+
+{% block main_content %}
+
+{% if role == 'Accountant' %}
+<div class="job">
+
+    <!-- ===== TABS ===== -->
+    <div class="job-header">
+        <h2 id="tab-title">Employee Setup</h2>
+        <div style="display:flex; gap:8px;">
+            <button class="import-btn tab-btn active" id="tab-setup-btn" onclick="switchTab('setup')">
+                <span class="material-symbols-outlined">manage_accounts</span>
+                Employee Setup
+            </button>
+            <button class="import-btn tab-btn" id="tab-payroll-btn" onclick="switchTab('payroll')">
+                <span class="material-symbols-outlined">account_balance</span>
+                Run Payroll
+            </button>
+            <button class="import-btn tab-btn" id="tab-history-btn" onclick="switchTab('history')">
+                <span class="material-symbols-outlined">history</span>
+                History
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- TAB 1: EMPLOYEE SETUP         -->
+    <!-- ============================= -->
+    <div id="tab-setup">
+        <div class="jobbox">
+            {% if emp_to_setup %}
+                <h3>Edit Pay Setup — {{ emp_to_setup.name }}</h3>
+                <form method="POST" action="{{ url_for('setup_employee_pay', id=emp_to_setup.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="emp_type" required>
+                        <option value="" disabled {% if not emp_to_setup.emp_type %}selected{% endif %}>Employment Type</option>
+                        <option value="FW"      {% if emp_to_setup.emp_type == 'FW'      %}selected{% endif %}>Foreign Worker (Hourly)</option>
+                        <option value="SPASS"   {% if emp_to_setup.emp_type == 'SPASS'   %}selected{% endif %}>S-Pass (Monthly)</option>
+                        <option value="PR"      {% if emp_to_setup.emp_type == 'PR'      %}selected{% endif %}>Permanent Resident (Monthly)</option>
+                        <option value="Citizen" {% if emp_to_setup.emp_type == 'Citizen' %}selected{% endif %}>Citizen (Monthly)</option>
+                    </select>
+                    <input type="number" step="0.01" name="base_pay" value="{{ emp_to_setup.base_pay }}"
+                        placeholder="Base Pay (hourly rate if FW, monthly salary if others)" required>
+                    <input type="text" name="bank_acc" value="{{ emp_to_setup.bank_acc or '' }}"
+                        placeholder="Bank Account No.">
+                    <button type="submit">Save</button>
+                    <a href="{{ url_for('payrolltable') }}">Cancel</a>
+                </form>
+            {% else %}
+                <h3>Employee Pay Setup</h3>
+                <p style="color:var(--clr-dark-variant); font-size:0.85rem; margin-top:6px;">
+                    Click <b>Setup</b> on any employee below to assign their employment type, base pay and bank account.
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="jobtable">
+            <div class="search-bar">
+                <input type="text" id="setupSearch" placeholder="🔍 Search..." onkeyup="searchSetup()">
+            </div>
+            <table id="setupTable">
+                <thead>
+                    <tr>
+                        <th>Company ID</th><th>Name</th><th>Role</th>
+                        <th>Emp Type</th><th>Base Pay</th><th>Bank Acc</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td>{{ emp.company_id }}</td>
+                        <td>{{ emp.name }}</td>
+                        <td>{{ emp.role }}</td>
+                        <td>
+                            {% if emp.emp_type %}
+                                <span class="emp-badge emp-{{ emp.emp_type|lower }}">{{ emp.emp_type }}</span>
+                            {% else %}
+                                <span style="color:#aaa;">Not set</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if emp.base_pay %}
+                                ${{ "%.2f"|format(emp.base_pay) }}
+                                {% if emp.emp_type == 'FW' %}/hr{% else %}/mo{% endif %}
+                            {% else %}
+                                <span style="color:#aaa;">Not set</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ emp.bank_acc or '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('payrolltable', setup_id=emp.id) }}">Setup</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- TAB 2: RUN PAYROLL            -->
+    <!-- ============================= -->
+    <div id="tab-payroll" style="display:none;">
+        <div class="jobbox">
+            <h3>Run Monthly Payroll</h3>
+            <form id="payrollRunForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="month" name="payroll_month" id="payroll_month"
+                    value="{{ current_month }}" class="hire-date" required>
+                <button type="button" onclick="loadPayrollPreview()">
+                    Load Employees
+                </button>
+            </form>
+        </div>
+
+        <!-- Payroll preview table — filled via JS -->
+        <div class="jobtable" id="payrollPreviewContainer" style="display:none;">
+            <table id="payrollPreviewTable">
+                <thead>
+                    <tr>
+                        <th>Company ID</th><th>Name</th><th>Type</th>
+                        <th>Base Pay</th><th>Hours/OT</th>
+                        <th>Gross</th><th>Deductions</th><th>Net Pay</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="payrollPreviewBody"></tbody>
+            </table>
+            <div style="margin-top:10px; display:flex; justify-content:flex-end;">
+                <button class="import-btn" onclick="submitAllPayroll()">
+                    <span class="material-symbols-outlined">save</span>
+                    Save All Payroll
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+<!-- ============================= -->
+    <!-- TAB 3: HISTORY (updated)      -->
+    <!-- ============================= -->
+    <div id="tab-history" style="display:none;">
+        <div class="jobbox">
+            <h3>Payroll History</h3>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                <!-- filter row -->
+                <form method="GET" action="{{ url_for('payrolltable') }}" style="display:flex; gap:8px; align-items:center;">
+                    <input type="hidden" name="tab" value="history">
+                    <input type="month" name="history_month" value="{{ history_month or current_month }}"
+                        class="hire-date" style="width:auto;">
+                    <button type="submit">Filter</button>
+                </form>
+                <!-- download row below -->
+                <div style="display:flex; gap:8px;">
+                    <a href="{{ url_for('download_payroll', fmt='excel', month=history_month or current_month) }}">
+                        <button class="import-btn">
+                            <span class="material-symbols-outlined">download</span>
+                            Excel
+                        </button>
+                    </a>
+                    <a href="{{ url_for('download_payroll', fmt='pdf') }}?month={{ history_month or current_month }}">
+                        <button class="import-btn">
+                            <span class="material-symbols-outlined">picture_as_pdf</span>
+                            PDF
+                        </button>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="jobtable">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Company ID</th><th>Name</th><th>Company</th><th>Type</th><th>Month</th>
+                        <th>Gross</th><th>Deductions</th><th>Net Pay</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payroll_history %}
+                    <tr>
+                        <td>{{ p.company_id }}</td>
+                        <td>{{ p.name }}</td>
+                        <td>
+                            {% if p.company_code %}
+                                <span class="emp-badge emp-citizen">{{ p.company_code }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td><span class="emp-badge emp-{{ p.emp_type|lower if p.emp_type else 'na' }}">{{ p.emp_type or '-' }}</span></td>
+                        <td>{{ p.month }}</td>
+                        <td>${{ "%.2f"|format(p.gross_pay) }}</td>
+                        <td>${{ "%.2f"|format(p.deductions) }}</td>
+                        <td>${{ "%.2f"|format(p.net_pay) }}</td>
+                        <td>
+                            <a href="{{ url_for('payroll_detail', id=p.id) }}">View</a>
+                            <form action="{{ url_for('delete_payroll', id=p.id) }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" onclick="return confirm('Delete this payroll record?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not payroll_history %}
+                    <tr><td colspan="9" style="text-align:center; color:#aaa; padding:20px;">No records for this month</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+// =====================
+// TAB SWITCHING
+// =====================
+function switchTab(tab) {
+    document.getElementById('tab-setup').style.display   = 'none';
+    document.getElementById('tab-payroll').style.display = 'none';
+    document.getElementById('tab-history').style.display = 'none';
+
+    document.getElementById('tab-setup-btn').classList.remove('active');
+    document.getElementById('tab-payroll-btn').classList.remove('active');
+    document.getElementById('tab-history-btn').classList.remove('active');
+
+    document.getElementById('tab-' + tab).style.display = 'block';
+    document.getElementById('tab-' + tab + '-btn').classList.add('active');
+
+    const titles = { setup: 'Employee Setup', payroll: 'Run Payroll', history: 'Payroll History' };
+    document.getElementById('tab-title').textContent = titles[tab];
+}
+
+// Keep active tab on reload
+const urlParams = new URLSearchParams(window.location.search);
+const activeTab = urlParams.get('tab') || '{{ active_tab }}';
+if (activeTab === 'history') switchTab('history');
+else if (activeTab === 'payroll') switchTab('payroll');
+
+
+// =====================
+// SETUP SEARCH
+// =====================
+let setupRows = [];
+function searchSetup() {
+    if (!setupRows.length) {
+        setupRows = Array.from(document.querySelectorAll('#setupTable tbody tr'));
+    }
+    const q = document.getElementById('setupSearch').value.toLowerCase();
+    setupRows.forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+
+// =====================
+// SG PAYROLL CALCULATIONS
+// =====================
+const CPF_RATES = {
+    // employee_rate, employer_rate (as decimals, for age <= 55)
+    'Citizen': { emp: 0.20, employer: 0.17 },
+    'PR':      { emp: 0.20, employer: 0.17 },  // 3rd year onwards (full rate)
+    'SPASS':   { emp: 0.00, employer: 0.00 },  // no CPF, but SDL applies
+};
+const SDL_RATE = 0.0025;   // 0.25% of gross, capped at $11.25/mo
+const FW_LEVY  = 550;      // default FW levy — accountant can override per row
+
+function calcPayroll(emp, hours, ot, bonus, levy_override) {
+    const type = emp.emp_type;
+    const base = parseFloat(emp.base_pay) || 0;
+    let gross = 0, cpf_emp = 0, cpf_employer = 0, levy = 0, sdl = 0;
+
+    if (type === 'FW') {
+        const reg_hours = Math.max(0, hours - ot);
+        const reg_pay   = reg_hours * base;
+        const ot_pay    = ot * base * 1.5;
+        gross = reg_pay + ot_pay + (parseFloat(bonus) || 0);
+        levy  = parseFloat(levy_override) || FW_LEVY;
+
+    } else {
+        // Monthly workers: SPASS, PR, Citizen
+        const ot_pay = (parseFloat(ot) || 0) * ((base / 26 / 8) * 1.5);
+        gross = base + ot_pay + (parseFloat(bonus) || 0);
+
+        if (type === 'Citizen' || type === 'PR') {
+            cpf_emp      = gross * CPF_RATES[type].emp;
+            cpf_employer = gross * CPF_RATES[type].employer;
+        }
+        // SDL for all non-FW
+        sdl = Math.min(gross * SDL_RATE, 11.25);
+    }
+
+    const deductions = cpf_emp + levy;
+    const net = gross - deductions;
+
+    return {
+        gross:        gross,
+        cpf_emp:      cpf_emp,
+        cpf_employer: cpf_employer,
+        levy:         levy,
+        sdl:          sdl,
+        deductions:   deductions,
+        net:          net
+    };
+}
+
+
+// =====================
+// LOAD PAYROLL PREVIEW
+// =====================
+async function loadPayrollPreview() {
+    const month = document.getElementById('payroll_month').value;
+    if (!month) { alert('Please select a month'); return; }
+
+    const res  = await fetch(`/get_employees_for_payroll`);
+    const emps = await res.json();
+
+    const body = document.getElementById('payrollPreviewBody');
+    body.innerHTML = '';
+
+    emps.forEach(emp => {
+        if (!emp.emp_type || !emp.base_pay) return; // skip unset employees
+
+        const isFW = emp.emp_type === 'FW';
+        const row  = document.createElement('tr');
+        row.dataset.empId = emp.id;
+
+        row.innerHTML = `
+            <td>${emp.company_id || ''}</td>
+            <td>${emp.name}</td>
+            <td><span class="emp-badge emp-${emp.emp_type.toLowerCase()}">${emp.emp_type}</span></td>
+            <td>$${parseFloat(emp.base_pay).toFixed(2)}${isFW ? '/hr' : '/mo'}</td>
+            <td>
+                ${isFW
+                    ? `<input type="number" class="pay-input" placeholder="Hrs" data-field="hours" min="0" style="width:55px;">
+                       <input type="number" class="pay-input" placeholder="OT hrs" data-field="ot" min="0" style="width:55px;">`
+                    : `<input type="number" class="pay-input" placeholder="OT hrs" data-field="ot" min="0" style="width:60px;">`
+                }
+                ${isFW
+                    ? `<input type="number" class="pay-input" placeholder="Levy" data-field="levy" value="${FW_LEVY}" style="width:60px;">`
+                    : ''
+                }
+                <input type="number" class="pay-input" placeholder="Bonus" data-field="bonus" min="0" style="width:65px;">
+            </td>
+            <td class="col-gross">-</td>
+            <td class="col-ded">-</td>
+            <td class="col-net">-</td>
+            <td><button type="button" onclick="calcRow(this, ${JSON.stringify(emp).replace(/"/g, '&quot;')})">Calc</button></td>
+        `;
+        body.appendChild(row);
+    });
+
+    document.getElementById('payrollPreviewContainer').style.display = 'block';
+}
+
+function calcRow(btn, emp) {
+    const row    = btn.closest('tr');
+    const inputs = row.querySelectorAll('.pay-input');
+    let hours = 0, ot = 0, bonus = 0, levy = FW_LEVY;
+
+    inputs.forEach(i => {
+        if (i.dataset.field === 'hours') hours = parseFloat(i.value) || 0;
+        if (i.dataset.field === 'ot')    ot    = parseFloat(i.value) || 0;
+        if (i.dataset.field === 'bonus') bonus = parseFloat(i.value) || 0;
+        if (i.dataset.field === 'levy')  levy  = parseFloat(i.value) || FW_LEVY;
+    });
+
+    const r = calcPayroll(emp, hours, ot, bonus, levy);
+
+    row.querySelector('.col-gross').textContent = `$${r.gross.toFixed(2)}`;
+    row.querySelector('.col-ded').textContent   = `$${r.deductions.toFixed(2)}`;
+    row.querySelector('.col-net').textContent   = `$${r.net.toFixed(2)}`;
+    row.dataset.result = JSON.stringify(r);
+    row.dataset.hours  = hours;
+    row.dataset.ot     = ot;
+    row.dataset.bonus  = bonus;
+}
+
+
+// =====================
+// SAVE ALL PAYROLL
+// =====================
+async function submitAllPayroll() {
+    const month = document.getElementById('payroll_month').value;
+    const rows  = document.querySelectorAll('#payrollPreviewBody tr');
+    const payload = [];
+
+    rows.forEach(row => {
+        if (!row.dataset.result) return; // skip uncalculated
+        const r = JSON.parse(row.dataset.result);
+        payload.push({
+            employee_id:  row.dataset.empId,
+            month:        month,
+            gross_pay:    r.gross,
+            cpf_employee: r.cpf_emp,
+            cpf_employer: r.cpf_employer,
+            levy:         r.levy,
+            sdl:          r.sdl,
+            overtime_pay: 0,
+            bonus:        parseFloat(row.dataset.bonus) || 0,
+            deductions:   r.deductions,
+            net_pay:      r.net,
+            breakdown:    r
+        });
+    });
+
+    if (!payload.length) { alert('Please calculate at least one employee first.'); return; }
+
+    const res = await fetch('/save_payroll', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ records: payload })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+        alert(`Saved ${data.saved} payroll records!`);
+        switchTab('history');
+        location.reload();
+    } else {
+        alert('Error saving: ' + data.error);
+    }
+}
+</script>
+{% endblock %}

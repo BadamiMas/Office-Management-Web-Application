@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block extra_css %}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+{% endblock %}
+
+
+<!-- =============================================
+     RIGHT PANEL EXTRAS (attendance log)
+     Only dashboard pages have this
+============================================= -->
+{% block right_extra %}
+<div class="recent_updates">
+    <h2>Attendance Log</h2>
+    <div class="updates">
+        <div class="update">
+            <div class="message">
+                <p><b>Login Time:</b> <span id="login-time">-</span></p>
+                <p><b>Logout Time:</b> <span id="logout-time">-</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+<!-- =============================================
+     MAIN CONTENT — differs by role
+============================================= -->
+{% block main_content %}
+
+    <!-- INSIGHTS CARDS (Head, HR, Acc all have these) -->
+    {% if role %}
+    <div class="insights">
+        <div class="sales">
+            <span class="material-symbols-outlined">person</span>
+            <div class="middle">
+                <div class="left">
+                    <h3>Total Employees</h3>
+                    <h1 id="total-employees">0</h1>
+                </div>
+            </div>
+        </div>
+
+        <div class="projects">
+            <span class="material-symbols-outlined">avg_time</span>
+            <div class="middle">
+                <div class="left">
+                    <h3>Active Time (Hrs)</h3>
+                    <h1 id="active-hours">0</h1>
+                </div>
+            </div>
+        </div>
+
+        <div class="tasks">
+            <span class="material-symbols-outlined">task_alt</span>
+            <div class="middle">
+                <div class="left">
+                    <h3>Pending Tasks</h3>
+                    <h1 id="pending-count">0</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- CHART — each role sees a different one -->
+    <div class="company_graph">
+        <h1>Company Progress</h1>
+        <div class="charts">
+            <div class="charts-card">
+                <h2 class="chart-title">Overview</h2>
+                <div id="chart_div" style="width:100%; height:425px;"></div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+<!-- =============================================
+     CHARTS JS — role decides which endpoint to hit
+============================================= -->
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    // Pass the role from Flask into JS
+    // charts.js reads this and calls the right endpoint
+    const USER_ROLE = "{{ role }}";
+    initChart(USER_ROLE);
+</script>
+{% endblock %}

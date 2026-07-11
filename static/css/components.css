@@ -1,0 +1,333 @@
+/* ============================================
+   COMPONENTS.CSS — page-specific styles only
+   job tables, secrefy box, forms
+   ============================================ */
+
+/* ============
+   JOB SECTION (hr_job, acc_job, head_job)
+   ============ */
+.job { margin-top: 1.4rem; margin-bottom: 2rem; margin-left: -20px; }
+
+.job-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;  /* ← pushes h2 left, button right */
+    margin-bottom: 15px;
+}
+
+.job-header h2 {
+    margin: 0; color: var(--clr-dark);
+    font-size: 1.3rem; font-weight: 800;
+}
+
+.job-header button {
+    background-color: rgb(139, 0, 0);
+    color: #fff; border: none; border-radius: 5px;
+    cursor: pointer; padding: 5px; margin-top: 10px;
+}
+
+.jobbox {
+    width: 100%; min-height: 25vh; max-height: 25vh;
+    overflow-y: auto; background-color: var(--clr-white);
+    border-radius: var(--card-border-radius);
+    padding: var(--card-padding); box-shadow: var(--box-shadow);
+    transition: all .3s ease;
+}
+
+.jobbox:hover { box-shadow: none; }
+.jobbox h3 { text-align: center; color: var(--clr-dark); margin-top: -10px; margin-bottom: 5px; }
+
+.jobbox form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+
+.jobbox form input[type="text"],
+.jobbox form input[type="number"],
+.jobbox form input[type="email"],
+.jobbox form input[type="password"] {
+    padding: 5px; font-size: 12px;
+    background: #630000; border-radius: 5px;
+    width: 100%;
+    color: #d1ffd1 !important;
+    font-weight: bold !important;
+    border: none;
+    outline: none;
+}
+
+.jobbox form input[type="text"]::placeholder,
+.jobbox form input[type="number"]::placeholder,
+.jobbox form input[type="email"]::placeholder,
+.jobbox form input[type="password"]::placeholder {
+    color: #d1ffd1;
+    opacity: 0.7;
+}
+
+.hire-date {
+    padding: 5px; font-size: 12px;
+    background: #630000; border-radius: 5px;
+    width: 100%; color: #d1ffd1; font-weight: bold;
+}
+
+.jobbox select {
+    padding: 5px; font-size: 12px;
+    background: #630000; border-radius: 5px;
+    width: 100%; color: #d1ffd1; font-weight: bold;
+}
+
+.jobbox .face-image {
+    padding: 5px; font-size: 12px;
+    background: #630000; border-radius: 5px;
+    width: 100%; color: #d1ffd1; font-weight: bold;
+}
+
+.jobbox label { color: var(--clr-dark); }
+
+.jobbox form button {
+    padding: 5px; font-size: 12px;
+    background-color: #d1ffd173; color: #630000;
+    font-weight: bold;
+    border: none; border-radius: 5px;
+    cursor: pointer; transition: background-color 0.3s ease;
+}
+
+/* ============
+   JOB TABLE (shared by all job pages)
+   ============ */
+.jobtable {
+    width: 100%; min-height: 48.2vh; max-height: 48.2vh;
+    overflow-y: auto; background-color: var(--clr-white);
+    border-radius: var(--card-border-radius);
+    padding: var(--card-padding); box-shadow: var(--box-shadow);
+    transition: all .3s ease; margin-top: 10px;
+}
+
+.jobtable:hover { box-shadow: none; }
+.jobtable table { width: 100%; border-collapse: collapse; color: var(--clr-dark); min-width: 600px;}
+.jobtable table, .jobtable th, .jobtable td { border: 1px solid #000; }
+.jobtable th, .jobtable td { padding: 8px; text-align: left; background: #d1ffd173; }
+
+.jobtable a {
+    background-color: #d1ffd173;
+    color: #630000; border: none; border-radius: 5px;
+    cursor: pointer; padding: 4px; margin: 10px; font-size: 13px;
+}
+
+.jobtable button, .delete-btn {
+    background-color: #d1ffd173;
+    color: #630000; border: none; border-radius: 5px;
+    cursor: pointer; padding: 5px; margin-top: 10px;
+}
+
+/*============
+  IMPORT BUTTON
+ ============*/
+ .import-btn {
+    background-color: #630000;
+    color: #d1ffd173;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+}
+
+/* ============
+   SEARCH BAR
+   ============ */
+.search-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.search-bar input {
+    width: 250px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    background: #d1ffd173;
+    border: none;
+    outline: none;
+    color: var(--clr-dark);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+}
+
+.search-bar input::placeholder {
+    color: var(--clr-dark);
+}
+
+/* ============
+   PAGINATION
+   ============ */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.page-btn {
+    background: #a8c4a8;
+    color: var(--clr-dark);
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.8rem;
+}
+
+.page-btn.active {
+    background: #630000;
+    color: #fff;
+}
+
+.page-btn:hover {
+    background: #630000;
+    color: #fff;
+}
+
+/* ============
+   SECREFY (doc page only)
+   ============ */
+.secrefy { margin-top: 1.8rem; margin-bottom: 2rem; margin-left: -20px; }
+
+.secrefy-header { display: flex; align-items: center; margin-bottom: 15px; }
+
+.secrefy-header h2 { margin: 0; color: var(--clr-dark); font-size: 1.3rem; font-weight: 800; }
+
+.secrefy-header button {
+    border-radius: 50%; border: 0;
+    color: var(--clr-dark); background: transparent; cursor: pointer; padding: 5px;
+}
+
+.secretbox {
+    background: var(--clr-white); padding: 30px;
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow); transition: all .3s ease;
+    text-align: center; min-height: 72.5vh; max-height: 72.5vh; overflow-y: auto;
+}
+
+.secretbox:hover { box-shadow: none; }
+
+.uploadlabel {
+    width: 100%; min-height: 250px; background: #a8c4a8a2;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    border: 2px dashed #fff; cursor: pointer;
+}
+
+.uploadlabel span { font-size: 70px; color: #fff; }
+.uploadlabel p { font-size: 20px; font-weight: 800; }
+.uploaded { margin: 30px 0; font-size: 18px; font-weight: 500; color: var(--clr-dark); }
+
+.showfilebox {
+    display: flex; background: #a8c4a8a2;
+    justify-content: space-between; align-items: center;
+    margin: 10px 0; padding: 10px 15px;
+}
+
+.filetype {
+    background: #263b5a; color: #fff;
+    padding: 5px 15px; font-size: 20px;
+    border-radius: 40px;
+}
+
+.secretkey {
+    display: flex; flex-direction: column;
+    background: #a8c4a8; padding: 5px 15px;
+    border-radius: 30px; margin: 20px 0 25px;
+}
+
+.secretkey input {
+    flex: 1 1 auto; border: none; background: transparent;
+    padding: 10px 15px; outline: none; color: #000;
+}
+
+.key-buttons { display: flex; gap: 10px; justify-content: center; }
+
+.key-buttons button {
+    border: none; outline: none; padding: 10px 15px;
+    background: #a8c4a8; color: #fff; cursor: pointer;
+    font-size: 16px; border-radius: 40px;
+}
+
+/* ============
+   PAYROLL TABS
+   ============ */
+.tab-btn {
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.tab-btn.active {
+    opacity: 1;
+    background-color: #263b5a;
+}
+
+/* ============
+   EMP TYPE BADGES
+   ============ */
+.emp-badge {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    display: inline-block;
+}
+
+.emp-fw      { background-color: #7a3e00; }
+.emp-spass   { background-color: #005f8a; }
+.emp-pr      { background-color: #2d6a2d; }
+.emp-citizen { background-color: #630000; }
+.emp-na      { background-color: #888;    }
+
+/* ============
+   PAYROLL INPUT CELLS
+   ============ */
+.pay-input {
+    padding: 4px 6px;
+    border-radius: 5px;
+    border: 1px solid var(--clr-light);
+    background: var(--clr-white);
+    color: var(--clr-dark);
+    font-size: 0.8rem;
+    margin: 2px;
+}
+
+/* ============
+   DETAIL TABLE
+   ============ */
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.detail-table th, .detail-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--clr-light);
+    text-align: left;
+    color: var(--clr-dark);
+    font-size: 0.9rem;
+}
+
+.detail-table th {
+    font-weight: 600;
+    width: 50%;
+}
+
+.detail-total th, .detail-total td {
+    font-weight: 700;
+    border-top: 2px solid var(--clr-light);
+    color: var(--clr-danger);
+}
+
+.detail-net th, .detail-net td {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #2d6a2d;
+}

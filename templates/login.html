@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/tmt.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Full screen gif background -->
+    <div class="bg">
+        <img src="{{ url_for('static', filename='images/logo.gif') }}" alt="background">
+        <div class="bg-overlay"></div>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-box">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Login card -->
+    <div class="card">
+
+        <div class="card-header">
+            <h1>TMT</h1>
+            <p>Management Portal</p>
+        </div>
+
+        <!-- Traditional login -->
+        <form class="login-form" method="POST" action="{{ url_for('login') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="input-group">
+                <input type="text" name="name" placeholder="Username" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit" class="login-btn">Sign In</button>
+        </form>
+
+        <div class="divider"><span>or</span></div>
+
+        <!-- Face login -->
+        <div class="face-login">
+            <button type="button" class="face-btn" onclick="startFaceLogin()">
+                <img src="{{ url_for('static', filename='images/camera.png') }}" alt="Face Login">
+                <span>Face Recognition</span>
+            </button>
+        </div>
+
+        <!-- Webcam -->
+        <video id="webcam" autoplay playsinline style="display:none;"></video>
+        <canvas id="snapshot" width="320" height="240" style="display:none;"></canvas>
+
+    </div>
+
+    <script>
+    function startFaceLogin() {
+        const video = document.getElementById("webcam");
+        const btn = document.querySelector(".face-btn");
+        btn.innerHTML = `<span>Scanning...</span>`;
+        btn.disabled = true;
+        video.style.display = "block";
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+            setTimeout(() => {
+                const canvas = document.getElementById("snapshot");
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                stream.getTracks().forEach(track => track.stop());
+                video.style.display = "none";
+
+                const imageData = canvas.toDataURL("image/jpeg");
+                fetch("{{ url_for('face_login') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token() }}"
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({ image: imageData })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = data.redirect;
+                    } else {
+                        alert(data.message);
+                        btn.innerHTML = `<img src="{{ url_for('static', filename='images/camera.png') }}" alt="Face Login"><span>Face Recognition</span>`;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    alert("Something went wrong with face login");
+                    btn.innerHTML = `<img src="{{ url_for('static', filename='images/camera.png') }}" alt="Face Login"><span>Face Recognition</span>`;
+                    btn.disabled = false;
+                });
+            }, 2000);
+        })
+        .catch(err => {
+            alert("Unable to access camera");
+            btn.innerHTML = `<img src="{{ url_for('static', filename='images/camera.png') }}" alt="Face Login"><span>Face Recognition</span>`;
+            btn.disabled = false;
+        });
+    }
+    </script>
+
+</body>
+</html>

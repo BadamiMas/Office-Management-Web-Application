@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Payroll Detail{% endblock %}
+
+{% block main_content %}
+{% if role == 'Accountant' %}
+<div class="job">
+    <div class="job-header">
+        <h2>Payroll Breakdown</h2>
+        <a href="{{ url_for('payrolltable', tab='history') }}">
+            <button class="import-btn">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Back
+            </button>
+        </a>
+    </div>
+
+    <div class="jobbox">
+        <h3>{{ record.name }} — {{ record.month }}</h3>
+        <p style="color:var(--clr-dark-variant); font-size:0.85rem; margin-bottom:12px;">
+            {{ record.company_id }} &nbsp;|&nbsp;
+            <span class="emp-badge emp-{{ record.emp_type|lower if record.emp_type else 'na' }}">
+                {{ record.emp_type or 'N/A' }}
+            </span>
+        </p>
+
+        <table class="detail-table">
+            <tr><th>Gross Pay</th>     <td>${{ "%.2f"|format(record.gross_pay) }}</td></tr>
+            {% if record.emp_type in ['Citizen', 'PR'] %}
+            <tr><th>CPF (Employee)</th><td>-${{ "%.2f"|format(record.cpf_employee) }}</td></tr>
+            <tr><th>CPF (Employer)</th><td>${{ "%.2f"|format(record.cpf_employer) }} <span style="color:#aaa; font-size:0.8rem;">(employer contribution)</span></td></tr>
+            {% endif %}
+            {% if record.emp_type == 'FW' %}
+            <tr><th>FW Levy</th>       <td>-${{ "%.2f"|format(record.levy) }}</td></tr>
+            {% endif %}
+            {% if record.sdl %}
+            <tr><th>SDL</th>           <td>-${{ "%.2f"|format(record.sdl) }}</td></tr>
+            {% endif %}
+            {% if record.bonus %}
+            <tr><th>Bonus</th>         <td>+${{ "%.2f"|format(record.bonus) }}</td></tr>
+            {% endif %}
+            <tr class="detail-total"><th>Total Deductions</th><td>-${{ "%.2f"|format(record.deductions) }}</td></tr>
+            <tr class="detail-net">  <th>Net Pay</th>         <td>${{ "%.2f"|format(record.net_pay) }}</td></tr>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Activity Logs{% endblock %}
+
+{% block main_content %}
+<div class="job">
+    <div class="job-header">
+        <h2>Activity Logs</h2>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <form method="GET" action="{{ url_for('sheet_logs') }}" style="display:flex; gap:6px; align-items:center;">
+                <select name="role_filter" onchange="this.form.submit()" style="padding:5px 8px; border-radius:5px; border:1px solid var(--clr-light); background:var(--clr-white); color:var(--clr-dark); font-family:'Poppins',sans-serif; font-size:0.85rem;">
+                    <option value="">All Roles</option>
+                    <option value="HR"          {% if role_filter == 'HR'          %}selected{% endif %}>HR</option>
+                    <option value="Accountant"  {% if role_filter == 'Accountant'  %}selected{% endif %}>Accountant</option>
+                    <option value="Head"        {% if role_filter == 'Head'        %}selected{% endif %}>Head</option>
+                    <option value="Admin"       {% if role_filter == 'Admin'       %}selected{% endif %}>Admin</option>
+                    <option value="Finance"     {% if role_filter == 'Finance'     %}selected{% endif %}>Finance</option>
+                </select>
+            </form>
+            <form method="POST" action="{{ url_for('clear_sheet_logs') }}" style="display:inline;"
+                  onsubmit="return confirm('Clear all logs? This cannot be undone.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" style="background:#8B0000; color:#fff; border:none; padding:6px 14px; border-radius:5px; cursor:pointer; font-family:'Poppins',sans-serif; font-size:0.85rem;">
+                    <span class="material-symbols-outlined" style="font-size:1rem; vertical-align:middle;">delete_sweep</span>
+                    Clear Logs
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="jobtable">
+        <div class="search-bar">
+            <input type="text" id="logsSearch" placeholder="🔍 Search..." onkeyup="searchLogs()">
+        </div>
+        <table id="logsTable">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                    <th>Detail</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="white-space:nowrap;">{{ log.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+                    <td>{{ log.user }}</td>
+                    <td>
+                        {% set role_colors = {
+                            'HR': 'emp-pr',
+                            'Accountant': 'emp-spass',
+                            'Head': 'emp-fw',
+                            'Admin': 'emp-citizen',
+                            'Finance': 'emp-wp'
+                        } %}
+                        <span class="emp-badge {{ role_colors.get(log.role, 'emp-na') }}">{{ log.role }}</span>
+                    </td>
+                    <td><b>{{ log.action }}</b></td>
+                    <td style="color:var(--clr-dark-variant); font-size:0.85rem;">{{ log.detail }}</td>
+                </tr>
+                {% endfor %}
+                {% if not logs %}
+                <tr>
+                    <td colspan="5" style="text-align:center; color:#aaa; padding:20px;">No activity logs yet</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        <!-- pagination -->
+        <div class="pagination" id="logsPagination"></div>
+    </div>
+</div>
+
+<script>
+function searchLogs() {
+    const input = document.getElementById('logsSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('#logsTable tbody tr');
+    rows.forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(input) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

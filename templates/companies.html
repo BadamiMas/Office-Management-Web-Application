@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Companies{% endblock %}
+
+{% block main_content %}
+{% if role in ['Head', 'HR'] %}
+<div class="job">
+    <div class="job-header">
+        <h2>Company Management</h2>
+    </div>
+
+    <div class="jobbox">
+        {% if company_to_edit %}
+            <h3>Edit Company</h3>
+            <form method="POST" action="{{ url_for('edit_company', id=company_to_edit.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="code" value="{{ company_to_edit.code }}" placeholder="Code (e.g. TQS)" required>
+                <input type="text" name="name" value="{{ company_to_edit.name }}" placeholder="Full Company Name" required>
+                <button type="submit">Update</button>
+                <a href="{{ url_for('companies') }}">Cancel</a>
+            </form>
+        {% else %}
+            <h3>Add Company</h3>
+            <form method="POST" action="{{ url_for('add_company') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="code" placeholder="Code (e.g. TQS)" required>
+                <input type="text" name="name" placeholder="Full Company Name" required>
+                <button type="submit">Add</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="jobtable">
+        <table>
+            <thead>
+                <tr><th>Code</th><th>Company Name</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for co in company_list %}
+                <tr>
+                    <td><span class="emp-badge emp-citizen">{{ co.code }}</span></td>
+                    <td>{{ co.name }}</td>
+                    <td>
+                        <a href="{{ url_for('companies', edit_id=co.id) }}">Edit</a>
+                        <form action="{{ url_for('delete_company', id=co.id) }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" onclick="return confirm('Delete this company?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Secrefy</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/tmt.png') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/doc.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+    
+
+
+<div class="container1">
+
+    <!-- ========== SIDEBAR ========== -->
+    <aside>
+        <div class="top">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/tmt.png') }}">
+            </div>
+            <div class="close" id="close-btn">
+                <span class="material-symbols-outlined">close</span>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <a href="{{ url_for('dashboard') }}">
+                <span class="material-symbols-outlined">grid_view</span>
+                <h3>Dashboard</h3>
+            </a>
+
+            {% if role == 'HR' %}
+                <a href="{{ url_for('job') }}">
+                    <span class="material-symbols-outlined">people</span>
+                    <h3>Employees</h3>
+                </a>
+
+            {% elif role == 'Accountant' %}
+                <a href="{{ url_for('job') }}">
+                    <span class="material-symbols-outlined">payments</span>
+                    <h3>Cash Flow</h3>
+                </a>
+                <a href="{{ url_for('payrolltable') }}">
+                    <span class="material-symbols-outlined">account_balance</span>
+                    <h3>Payroll</h3>
+                </a>
+
+            {% elif role == 'Head' %}
+                <a href="{{ url_for('job') }}">
+                    <span class="material-symbols-outlined">manage_accounts</span>
+                    <h3>Users</h3>
+                </a>
+                <a href="{{ url_for('companies') }}">
+                    <span class="material-symbols-outlined">business</span>
+                    <h3>Companies</h3>
+                </a>
+                <a href="{{ url_for('sheet_logs') }}">
+                    <span class="material-symbols-outlined">history</span>
+                    <h3>Sheet Logs</h3>
+                </a>
+                <a href="#">
+                    <span class="material-symbols-outlined">bar_chart</span>
+                    <h3>Overview</h3>
+                </a>
+
+            {% elif role == 'Admin' %}
+                <a href="#">
+                    <span class="material-symbols-outlined">inventory</span>
+                    <h3>Stock</h3>
+                </a>
+                <a href="{{ url_for('job') }}">
+                    <span class="material-symbols-outlined">people</span>
+                    <h3>Employees</h3>
+                </a>
+
+            {% elif role == 'Finance' %}
+                <a href="{{ url_for('quotations') }}">
+                    <span class="material-symbols-outlined">request_quote</span>
+                    <h3>Quotations</h3>
+                </a>
+                <a href="{{ url_for('invoices') }}">
+                    <span class="material-symbols-outlined">receipt</span>
+                    <h3>Invoices</h3>
+                </a>
+            {% endif %}
+
+            <a href="{{ url_for('doc') }}">
+                <span class="material-symbols-outlined">receipt_long</span>
+                <h3>Document</h3>
+            </a>
+            <a href="{{ url_for('logout') }}">
+                <span class="material-symbols-outlined">logout</span>
+                <h3>Logout</h3>
+            </a>
+        </div>
+    </aside>
+    <!-- ========== END SIDEBAR ========== -->
+
+
+    <!--main section start-->
+        <main>
+            <h1>Dashboard</h1>
+             <div class="date">
+                <input type="date" id="today-date">
+             </div>
+
+             <script>
+                // Get today's date in YYYY-MM-DD format
+                const today = new Date();
+                const dd = String(today.getDate()).padStart(2, '0');
+                const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+                const yyyy = today.getFullYear();
+                const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+                // Set the value of the date input
+                document.getElementById('today-date').value = formattedDate;
+            </script>
+
+            <div class="secrefy">
+                <div class="secrefy-header">
+                    <h2>Secrefy <button id="openPop"><span class="material-symbols-outlined">help</span></button></h2>
+                </div>
+
+                <!--help pop-up-->
+                <div class="pop" id="pop">
+                    <div class="popup">
+                        <h2>How to use Secrefy?</h2>
+                        <p>1. Click on "Click to Upload" to select a file from your device.</p>
+                        <p>2. Enter your Secrefy Key in the input box provided.</p>
+                        <p>3. Choose either "Encrypt" or "Decrypt" based on your requirement.</p>
+                        <p>4. To clear the form, click on the "Clear" button.</p>
+                        <button id="closePop">Close</button>
+                    </div>
+                </div>
+
+                <div class="secretbox">
+                    <form id="secretForm" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <!--file upload-->
+                        <input type="file" id="upload" name="file" required hidden>
+                        <label for="upload" class="uploadlabel">
+                            <span><i class="fa fa-cloud-upload"></i></span>
+                            <p id="fileLabelText">Click to Upload</p>
+                        </label>
+
+                        <!--file uploaded view-->
+                        <div id="filewrapper">
+                            <h3 class="uploaded">Uploaded Documents</h3>
+                        <!--    <div class="showfilebox">
+                                <div class="left">
+                                    <span class="filetype">PDF</span>
+                                    <h3>Web.pdf</h3>
+                                </div>
+                                <div class="right">
+                                    <span>&#215;</span>
+                            </div>  -->
+                        </div>
+
+                        <!--input n buttons-->
+                        <div class="secretkey">
+                            <input type="text" name="key" id="secrefy-key" placeholder="Type Secrefy Key..." required>
+                        </div>
+                        <div class="key-buttons">
+                            <button type="submit" formaction="/encrypt">Encrypt</button>
+                            <button type="submit" formaction="/decrypt">Decrypt</button>
+                            <button type="reset" id="clearBtn">Clear</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    <!--end main section-->
+    
+        <!--right section start-->
+        <div class="right">
+            <div class="top">
+                <button id="menu-bar">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <div class="theme-toggler">
+                    <span class="material-symbols-outlined active">light_mode</span>
+                    <span class="material-symbols-outlined">dark_mode</span>
+                </div>
+                <div class="profile">
+                    <div class="info">
+                        <p><b>{{ username }}</b></p>
+                        <p>{{role}}</p>
+                        <small class="text-muted"></small>
+                    </div>
+                    <div class="profile-photo">
+                        <img src="{{ url_for('static', filename='images/icon.jpg') }}">
+                    </div>
+                </div>
+            </div>
+            <!--end top-->
+
+            <!--start to do list-->
+            <div class="to-do">
+                <h2>To-Do List</h2>
+                <!--todo list section start-->
+                <div class="todo-list">
+                    
+                    <div class="row">
+                        <input type="text" id="input-box" placeholder="Add task...">
+                        <button onclick="addTask()">Add</button>
+                    </div>
+                    <ul id="list">
+            <!-- tasks will show -->
+                    </ul>
+                </div>
+            </div>
+            <!--end to do list-->
+        </div>
+        <!--end right section-->
+</div>
+
+
+
+<script src="{{ url_for('static', filename='js/doc.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.35.5/apexcharts.min.js"></script>
+</body>
+</html>
+
+
